@@ -1,0 +1,26 @@
+# logs
+logs
+*.log
+npm-debug.log*
+
+# dependency directory
+node_modules/
+
+# production output
+dist/
+build/
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
