@@ -2,6 +2,11 @@
   --bg-main: #0b0f19;
   --bg-card: #151c2e;
   --bg-card-hover: #1e2942;
+  --bg-subcard: rgba(255, 255, 255, 0.03);
+  --bg-input: rgba(15, 23, 42, 0.6);
+  --table-th-bg: rgba(15, 23, 42, 0.7);
+  --header-bg: rgba(11, 15, 25, 0.88);
+
   --border-color: rgba(255, 255, 255, 0.08);
   --border-highlight: rgba(245, 158, 11, 0.3);
   
@@ -39,7 +44,12 @@
   --bg-main: #f1f5f9;
   --bg-card: #ffffff;
   --bg-card-hover: #f8fafc;
-  --border-color: #e2e8f0;
+  --bg-subcard: #f8fafc;
+  --bg-input: #ffffff;
+  --table-th-bg: #f1f5f9;
+  --header-bg: rgba(255, 255, 255, 0.94);
+
+  --border-color: #cbd5e1;
   --border-highlight: rgba(217, 119, 6, 0.4);
   
   --primary-gold: #d97706;
@@ -52,7 +62,7 @@
   --accent-rose: #e11d48;
   
   --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-muted: #475569;
   --text-dark: #ffffff;
 
   --logo-text-color: #0f172a;
@@ -101,7 +111,7 @@ button {
 input, select, textarea {
   font-family: inherit;
   color: var(--text-main);
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 0.75rem 1rem;
@@ -127,7 +137,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-color);
   border-radius: var(--radius-full);
 }
 

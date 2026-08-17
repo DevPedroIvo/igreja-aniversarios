@@ -209,7 +209,9 @@ export default function ConfigView({
 
             {/* Preview da Logo no Modo Escuro (Letras Brancas) */}
             <div style={{ background: '#0b0f19', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DunamisLogo height={42} />
+              <div style={{ '--logo-text-color': '#FFFFFF', '--logo-cutout-color': '#0b0f19' }}>
+                <DunamisLogo height={42} />
+              </div>
             </div>
           </div>
 
@@ -217,8 +219,8 @@ export default function ConfigView({
           <div 
             onClick={() => onToggleTheme && onToggleTheme('light')}
             style={{
-              background: '#FFFFFF',
-              border: `2px solid ${theme === 'light' ? 'var(--primary-gold)' : '#e2e8f0'}`,
+              background: theme === 'light' ? '#FFFFFF' : 'var(--bg-card)',
+              border: `2px solid ${theme === 'light' ? 'var(--primary-gold)' : 'var(--border-color)'}`,
               borderRadius: 'var(--radius-md)',
               padding: '1.25rem',
               cursor: 'pointer',
@@ -237,8 +239,8 @@ export default function ConfigView({
                 <Sun size={20} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>Modo Claro</div>
-                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Fundo claro e alto contraste para o dia a dia</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>Modo Claro</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Fundo claro e alto contraste para o dia a dia</div>
               </div>
             </div>
 
