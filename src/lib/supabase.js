@@ -1,13 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Obter variáveis de ambiente do Vite ou de localStorage (configuração visual no app)
+// Credenciais padrão do Supabase (Conexão Automática Direta)
+const DEFAULT_URL = 'https://aqughdyafqvzvqzmzljs.supabase.co';
+const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxdWdoZHlhZnF2enZxem16bGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NjY4MzEsImV4cCI6MjEwMDQ0MjgzMX0.KtH_SbbkvB4QNwY5kxHfmXJLDWvW-4eOwOHttT2YYwk';
+
 const storedUrl = typeof window !== 'undefined' ? localStorage.getItem('IGREJA_SUPABASE_URL') : null;
 const storedKey = typeof window !== 'undefined' ? localStorage.getItem('IGREJA_SUPABASE_ANON_KEY') : null;
 
-export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || storedUrl || '';
-export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || storedKey || '';
+export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || storedUrl || DEFAULT_URL;
+export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || storedKey || DEFAULT_KEY;
 
-// Verificar se as credenciais são válidas (diferentes de exemplo padrão)
+// Verificar se as credenciais são válidas
 export const isSupabaseConfigured = () => {
   return (
     Boolean(supabaseUrl) &&
