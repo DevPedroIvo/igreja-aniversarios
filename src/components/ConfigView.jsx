@@ -9,6 +9,7 @@ import {
   ShieldCheck, 
   FileSpreadsheet, 
   FileCode, 
+  FileText,
   Check, 
   RefreshCw,
   Sliders
@@ -98,60 +99,102 @@ export default function ConfigView({
     }
   };
 
-  // Importar arquivo JSON ou CSV
+  // Importar arquivo JSON, CSV ou Word (.docx, .doc, .txt)
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setImporting(true);
-    const reader = new FileReader();
+    const fileName = file.name.toLowerCase();
 
-    reader.onload = async (event) => {
-      try {
-        const text = event.target.result;
-        let newMembers = [];
+    try {
+      let newMembers = [];
 
-        if (file.name.endsWith('.json')) {
-          const parsed = JSON.parse(text);
-          newMembers = Array.isArray(parsed) ? parsed : [parsed];
-        } else if (file.name.endsWith('.csv')) {
-          const lines = text.split(/\r?\n/).filter(line => line.trim());
-          if (lines.length > 1) {
-            const headers = lines[0].toLowerCase().split(',').map(h => h.replace(/["\r]/g, '').trim());
-            const nameIdx = headers.findIndex(h => h.includes('nome'));
-            const dateIdx = headers.findIndex(h => h.includes('nasc') || h.includes('data'));
-            const obsIdx = headers.findIndex(h => h.includes('obs'));
+      if (fileName.endsWith('.json')) {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        newMembers = Array.isArray(parsed) ? parsed : [parsed];
+      } else if (fileName.endsWith('.csv')) {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length > 1) {
+          const headers = lines[0].toLowerCase().split(',').map(h => h.replace(/["\r]/g, '').trim());
+          const nameIdx = headers.findIndex(h => h.includes('nome'));
+          const dateIdx = headers.findIndex(h => h.includes('nasc') || h.includes('data'));
+          const obsIdx = headers.findIndex(h => h.includes('obs'));
 
-            for (let i = 1; i < lines.length; i++) {
-              const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
-              const nome = cols[nameIdx !== -1 ? nameIdx : 0] || '';
-              const data_nascimento = cols[dateIdx !== -1 ? dateIdx : 1] || '';
-              const observacoes = cols[obsIdx !== -1 ? obsIdx : 2] || '';
-              if (nome) {
-                newMembers.push({ nome, data_nascimento, observacoes });
-              }
+          for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+            const nome = cols[nameIdx !== -1 ? nameIdx : 0] || '';
+            const data_nascimento = cols[dateIdx !== -1 ? dateIdx : 1] || '';
+            const observacoes = cols[obsIdx !== -1 ? obsIdx : 2] || '';
+            if (nome) {
+              newMembers.push({ nome, data_nascimento, observacoes });
             }
           }
         }
+      } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc') || fileName.endsWith('.txt')) {
+        const text = await file.text();
+        // Extrair texto limpo
+        const cleanText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+        const lines = cleanText.split(/[\r\n;.|\\]+/).map(l => l.trim()).filter(Boolean);
+        const dateRegex = /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})|(\d{4}[/-]\d{1,2}[/-]\d{1,2})/;
 
-        if (newMembers.length === 0) {
-          if (showToast) showToast('Nenhum registro válido encontrado no arquivo.', 'error');
-        } else {
-          if (onImportMembros) {
-            await onImportMembros(newMembers);
+        lines.forEach(line => {
+          const match = line.match(dateRegex);
+          if (match) {
+            const rawDate = match[0];
+            let dateIso = rawDate;
+
+            if (rawDate.includes('/')) {
+              const parts = rawDate.split('/');
+              if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                  dateIso = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                } else {
+                  const day = parts[0].padStart(2, '0');
+                  const month = parts[1].padStart(2, '0');
+                  const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+                  dateIso = `${year}-${month}-${day}`;
+                }
+              }
+            }
+
+            let namePart = line.replace(rawDate, '').replace(/[-:,–—]/g, ' ').replace(/\s+/g, ' ').trim();
+            namePart = namePart.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
+
+            if (namePart.length >= 2) {
+              newMembers.push({
+                nome: namePart,
+                data_nascimento: dateIso,
+                observacoes: 'Importado de Documento Word'
+              });
+            }
+          } else if (line.length >= 3 && !line.toLowerCase().includes('document') && !line.toLowerCase().includes('word')) {
+            newMembers.push({
+              nome: line.replace(/^(nome|membro|aniversariante)/i, '').trim(),
+              data_nascimento: '',
+              observacoes: 'Importado de Documento Word'
+            });
           }
-          if (showToast) showToast(`${newMembers.length} membros importados com sucesso!`);
-        }
-      } catch (err) {
-        console.error(err);
-        if (showToast) showToast('Formato de arquivo inválido.', 'error');
-      } finally {
-        setImporting(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        });
       }
-    };
 
-    reader.readAsText(file);
+      if (newMembers.length === 0) {
+        if (showToast) showToast('Nenhum membro válido foi encontrado no arquivo.', 'error');
+      } else {
+        if (onImportMembros) {
+          await onImportMembros(newMembers);
+        }
+        if (showToast) showToast(`${newMembers.length} membros importados com sucesso!`);
+      }
+    } catch (err) {
+      console.error(err);
+      if (showToast) showToast('Erro ao ler o arquivo selecionado.', 'error');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleDisconnectOthers = () => {
@@ -322,17 +365,17 @@ export default function ConfigView({
             <div>
               <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Upload size={18} style={{ color: 'var(--primary-gold)' }} />
-                <span>Importar Arquivo</span>
+                <span>Importar Arquivo (Word, CSV ou JSON)</span>
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Selecione um arquivo `.json` ou `.csv` para adicionar pessoas à lista.
+                Selecione um documento Word (`.docx`/`.doc`), `.csv` ou `.json` para importar pessoas.
               </div>
             </div>
 
             <input 
               type="file" 
               ref={fileInputRef} 
-              accept=".json, .csv" 
+              accept=".json, .csv, .docx, .doc, .txt" 
               onChange={handleFileChange} 
               style={{ display: 'none' }} 
             />
