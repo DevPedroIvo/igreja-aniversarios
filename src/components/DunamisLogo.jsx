@@ -1,10 +1,11 @@
 import React from 'react';
+import logoUrl from '../assets/logo-dunamis.png';
 
 export default function DunamisLogo({ height = 48, showSubtitle = true, className = "" }) {
   return (
     <div className={`dunamis-logo-container ${className}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.875rem' }}>
       <img 
-        src="/logo-dunamis.png" 
+        src={logoUrl} 
         alt="Ministério Dunamis - Poder e Graça" 
         style={{ 
           height: `${height}px`, 
