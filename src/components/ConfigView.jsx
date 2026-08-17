@@ -12,18 +12,22 @@ import {
   FileText,
   Check, 
   RefreshCw,
-  Sliders
+  Sliders,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import DunamisLogo from './DunamisLogo';
 
 export default function ConfigView({ 
   membros = [], 
   onImportMembros, 
+  onClearAllMembros,
   theme = 'dark', 
   onToggleTheme,
   showToast
 }) {
   const [importing, setImporting] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const [sessionDisconnected, setSessionDisconnected] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -212,6 +216,22 @@ export default function ConfigView({
     setSessionDisconnected(true);
     if (showToast) showToast('Outras sessões ativas foram desconectadas com segurança.');
     setTimeout(() => setSessionDisconnected(false), 4000);
+  };
+
+  const handleClearAll = async () => {
+    if (window.confirm('ATENÇÃO: Deseja realmente APAGAR TODOS os membros e aniversariantes cadastrados no sistema? Esta ação é permanente e irreversível!')) {
+      setClearing(true);
+      try {
+        if (onClearAllMembros) {
+          await onClearAllMembros();
+        }
+        if (showToast) showToast('Todos os membros e aniversariantes foram apagados.');
+      } catch (err) {
+        if (showToast) showToast('Erro ao apagar cadastros', 'error');
+      } finally {
+        setClearing(false);
+      }
+    }
   };
 
   return (
@@ -488,6 +508,44 @@ export default function ConfigView({
           </div>
         </div>
 
+      </div>
+
+      {/* 4. CARD DE ZONA DE PERIGO: APAGAR TODOS OS CADASTROS */}
+      <div className="card-panel" style={{ border: '1px solid rgba(244, 63, 94, 0.4)', background: 'rgba(244, 63, 94, 0.04)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#f43f5e' }}>
+              <AlertTriangle size={22} style={{ color: '#f43f5e' }} />
+              <span>Zona de Perigo • Apagar Todos os Cadastros</span>
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Excluir permanentemente todos os membros e aniversariantes cadastrados ({membros.length} cadastros).
+            </p>
+          </div>
+
+          <button 
+            onClick={handleClearAll}
+            disabled={clearing || membros.length === 0}
+            style={{
+              background: '#f43f5e',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0.75rem 1.25rem',
+              borderRadius: 'var(--radius-sm)',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              cursor: clearing || membros.length === 0 ? 'not-allowed' : 'pointer',
+              opacity: clearing || membros.length === 0 ? 0.6 : 1,
+              boxShadow: '0 2px 8px rgba(244, 63, 94, 0.25)'
+            }}
+          >
+            <Trash2 size={18} />
+            <span>{clearing ? 'Apagando...' : 'Apagar Todos os Membros e Aniversários'}</span>
+          </button>
+        </div>
       </div>
 
     </div>

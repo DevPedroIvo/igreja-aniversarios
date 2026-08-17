@@ -73,15 +73,15 @@ const INITIAL_DEMO_MEMBERS = [
 // Utilitário para salvar e buscar em LocalStorage
 export const getLocalMembers = () => {
   const local = localStorage.getItem('IGREJA_MEMBROS_LOCAL');
-  if (!local) {
+  if (local === null) {
     localStorage.setItem('IGREJA_MEMBROS_LOCAL', JSON.stringify(INITIAL_DEMO_MEMBERS));
     return INITIAL_DEMO_MEMBERS;
   }
   try {
     const parsed = JSON.parse(local);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DEMO_MEMBERS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    return INITIAL_DEMO_MEMBERS;
+    return [];
   }
 };
 
@@ -102,7 +102,6 @@ export async function fetchMembros() {
         .order('nome', { ascending: true });
 
       if (!error && data && data.length > 0) {
-        // Mesclar dados do Supabase com os salvos localmente
         const combined = [...data];
         const supabaseNames = new Set(data.map(m => (m.nome || '').toLowerCase().trim()));
 
@@ -120,7 +119,6 @@ export async function fetchMembros() {
     }
   }
 
-  // Fallback garantido pelo armazenamento local
   return { data: localMembers, source: 'local', error: null };
 }
 
@@ -131,12 +129,10 @@ export async function createMembro(novoMembro) {
     created_at: new Date().toISOString()
   };
 
-  // Salvar no armazenamento local imediatamente
   const members = getLocalMembers();
   const updatedList = [payload, ...members];
   setLocalMembers(updatedList);
 
-  // Sincronizar em segundo plano com Supabase
   if (isSupabaseConfigured() && supabase) {
     try {
       await supabase.from('membros').insert([{
@@ -167,11 +163,9 @@ export async function importBatchMembros(novosMembros) {
 
   if (payloads.length === 0) return { data: existing, source: 'local' };
 
-  // Atualizar lista local imediatamente
   const updatedList = [...payloads, ...existing];
   setLocalMembers(updatedList);
 
-  // Sincronizar em lote com o Supabase em segundo plano
   if (isSupabaseConfigured() && supabase) {
     try {
       const dbPayloads = payloads.map(p => ({
@@ -218,6 +212,20 @@ export async function deleteMembro(id) {
       await supabase.from('membros').delete().eq('id', id);
     } catch (err) {
       console.error('Erro ao excluir no Supabase:', err);
+    }
+  }
+
+  return { success: true };
+}
+
+export async function clearAllMembros() {
+  localStorage.setItem('IGREJA_MEMBROS_LOCAL', JSON.stringify([]));
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      await supabase.from('membros').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (err) {
+      console.error('Erro ao apagar membros no Supabase:', err);
     }
   }
 

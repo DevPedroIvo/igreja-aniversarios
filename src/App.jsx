@@ -7,7 +7,7 @@ import ConfigView from './components/ConfigView';
 import MemberFormModal from './components/MemberFormModal';
 import Footer from './components/Footer';
 
-import { fetchMembros, createMembro, updateMembro, deleteMembro, importBatchMembros } from './lib/supabase';
+import { fetchMembros, createMembro, updateMembro, deleteMembro, importBatchMembros, clearAllMembros } from './lib/supabase';
 import './App.css';
 
 export default function App() {
@@ -95,6 +95,17 @@ export default function App() {
     } catch (err) {
       console.error('Erro na importação em lote:', err);
       showToast('Erro ao importar membros', 'error');
+    }
+  };
+
+  // Apagar Todos os Membros e Aniversários
+  const handleClearAllMembros = async () => {
+    try {
+      await clearAllMembros();
+      await loadMembros();
+    } catch (err) {
+      console.error('Erro ao apagar membros:', err);
+      showToast('Erro ao apagar todos os cadastros', 'error');
     }
   };
 
@@ -190,6 +201,7 @@ export default function App() {
               <ConfigView
                 membros={membros}
                 onImportMembros={handleImportMembros}
+                onClearAllMembros={handleClearAllMembros}
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
                 showToast={showToast}
