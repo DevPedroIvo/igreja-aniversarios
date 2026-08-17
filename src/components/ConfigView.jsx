@@ -103,6 +103,84 @@ export default function ConfigView({
     }
   };
 
+const MONTH_MAP = {
+  'janeiro': '01', 'jan': '01',
+  'fevereiro': '02', 'fev': '02',
+  'março': '03', 'marco': '03', 'mar': '03',
+  'abril': '04', 'abr': '04',
+  'maio': '05', 'mai': '05',
+  'junho': '06', 'jun': '06',
+  'julho': '07', 'jul': '07',
+  'agosto': '08', 'ago': '08',
+  'setembro': '09', 'set': '09',
+  'outubro': '10', 'out': '10',
+  'novembro': '11', 'nov': '11',
+  'dezembro': '12', 'dez': '12'
+};
+
+const normalizeDateString = (inputStr) => {
+  if (!inputStr) return '';
+  const str = String(inputStr).trim().toLowerCase();
+  if (!str) return '';
+
+  // 1. YYYY-MM-DD ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+
+  // 2. DD/MM/YYYY ou DD/MM/YY ou DD/MM ou DD-MM
+  const dmyMatch = str.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, '0');
+    const month = dmyMatch[2].padStart(2, '0');
+    let year = dmyMatch[3] || '2000';
+    if (year.length === 2) year = `20${year}`;
+    if (parseInt(day, 10) >= 1 && parseInt(day, 10) <= 31 && parseInt(month, 10) >= 1 && parseInt(month, 10) <= 12) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  // 3. DD de Mês (de YYYY) ou DD Mês YYYY
+  const textMatch = str.match(/(\d{1,2})\s*(?:de\s*)?(janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s*(?:de\s*)?(\d{2,4}))?/);
+  if (textMatch) {
+    const day = textMatch[1].padStart(2, '0');
+    const monthStr = textMatch[2];
+    const month = MONTH_MAP[monthStr] || '01';
+    let year = textMatch[3] || '2000';
+    if (year.length === 2) year = `20${year}`;
+    return `${year}-${month}-${day}`;
+  }
+
+  return '';
+};
+
+// Extrai data e nome de uma linha de texto (Word/TXT/CSV)
+const extractDateAndNameFromLine = (line) => {
+  if (!line || line.length < 3) return null;
+
+  // DD/MM/YYYY ou DD/MM ou DD-MM
+  const dmyMatch = line.match(/\b(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?\b/);
+  if (dmyMatch) {
+    const rawDate = dmyMatch[0];
+    const dateIso = normalizeDateString(rawDate);
+    let namePart = line.replace(rawDate, '').replace(/[-:,–—()]/g, ' ').replace(/\s+/g, ' ').trim();
+    namePart = namePart.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
+    return { name: namePart, dateIso };
+  }
+
+  // DD de Mês (de YYYY)
+  const textMatch = line.match(/\b(\d{1,2})\s*(?:de\s*)?(janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s*(?:de\s*)?(\d{2,4}))?\b/i);
+  if (textMatch) {
+    const rawDate = textMatch[0];
+    const dateIso = normalizeDateString(rawDate);
+    let namePart = line.replace(rawDate, '').replace(/[-:,–—()]/g, ' ').replace(/\s+/g, ' ').trim();
+    namePart = namePart.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
+    return { name: namePart, dateIso };
+  }
+
+  return null;
+};
+
   // Importar arquivo JSON, CSV ou Word (.docx, .doc, .txt)
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
@@ -117,66 +195,54 @@ export default function ConfigView({
       if (fileName.endsWith('.json')) {
         const text = await file.text();
         const parsed = JSON.parse(text);
-        newMembers = Array.isArray(parsed) ? parsed : [parsed];
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+        newMembers = list.map(m => ({
+          nome: m.nome || m.name || '',
+          data_nascimento: normalizeDateString(m.data_nascimento || m.data || m.nascimento || m.aniversario || ''),
+          observacoes: m.observacoes || m.obs || ''
+        })).filter(m => m.nome);
       } else if (fileName.endsWith('.csv')) {
         const text = await file.text();
         const lines = text.split(/\r?\n/).filter(line => line.trim());
         if (lines.length > 1) {
           const headers = lines[0].toLowerCase().split(',').map(h => h.replace(/["\r]/g, '').trim());
-          const nameIdx = headers.findIndex(h => h.includes('nome'));
-          const dateIdx = headers.findIndex(h => h.includes('nasc') || h.includes('data'));
+          const nameIdx = headers.findIndex(h => h.includes('nome') || h.includes('name'));
+          const dateIdx = headers.findIndex(h => h.includes('nasc') || h.includes('data') || h.includes('aniversario') || h.includes('date'));
           const obsIdx = headers.findIndex(h => h.includes('obs'));
 
           for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
             const nome = cols[nameIdx !== -1 ? nameIdx : 0] || '';
-            const data_nascimento = cols[dateIdx !== -1 ? dateIdx : 1] || '';
+            const rawDate = cols[dateIdx !== -1 ? dateIdx : 1] || '';
             const observacoes = cols[obsIdx !== -1 ? obsIdx : 2] || '';
             if (nome) {
-              newMembers.push({ nome, data_nascimento, observacoes });
+              newMembers.push({
+                nome,
+                data_nascimento: normalizeDateString(rawDate),
+                observacoes
+              });
             }
           }
         }
       } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc') || fileName.endsWith('.txt')) {
         const rawText = await file.text();
-        // Filtrar apenas texto limpo e remover tags XML internas de arquivos docx
         const printableText = rawText.replace(/<[^>]+>/g, ' ').replace(/[^\x20-\x7E\xA0-\xFF\u00C0-\u024F\r\n]/g, ' ');
         const rawLines = printableText.split(/[\r\n;.|\\]+/).map(l => l.trim()).filter(l => l.length >= 3);
-        const dateRegex = /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})|(\d{4}[/-]\d{1,2}[/-]\d{1,2})/;
         const nameSeen = new Set();
 
         for (const line of rawLines) {
-          // Ignorar termos de metadados internos de arquivos Word/ZIP
-          if (line.includes('word/') || line.includes('xml') || line.includes('theme') || line.includes('rel') || line.length > 100) {
+          if (line.includes('word/') || line.includes('xml') || line.includes('theme') || line.includes('rel') || line.length > 120) {
             continue;
           }
 
-          const match = line.match(dateRegex);
+          const extracted = extractDateAndNameFromLine(line);
           let nameCandidate = '';
           let dateIso = '';
 
-          if (match) {
-            const rawDate = match[0];
-            if (rawDate.includes('/')) {
-              const parts = rawDate.split('/');
-              if (parts.length === 3) {
-                if (parts[0].length === 4) {
-                  dateIso = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-                } else {
-                  const day = parts[0].padStart(2, '0');
-                  const month = parts[1].padStart(2, '0');
-                  const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                  dateIso = `${year}-${month}-${day}`;
-                }
-              }
-            } else {
-              dateIso = rawDate;
-            }
-
-            nameCandidate = line.replace(rawDate, '').replace(/[-:,–—]/g, ' ').replace(/\s+/g, ' ').trim();
-            nameCandidate = nameCandidate.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
+          if (extracted) {
+            nameCandidate = extracted.name;
+            dateIso = extracted.dateIso;
           } else {
-            // Nome comum (somente letras e espaços em português)
             if (/^[a-zA-ZÀ-ÿ\s]{3,50}$/.test(line)) {
               nameCandidate = line.trim();
             }
