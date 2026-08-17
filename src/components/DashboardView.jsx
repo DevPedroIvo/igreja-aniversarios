@@ -1,6 +1,6 @@
 import React from 'react';
 import DashboardStats from './DashboardStats';
-import { UserPlus, Users, Cake, Calendar, ArrowRight, ShieldCheck, FileText } from 'lucide-react';
+import { Cake, ArrowRight } from 'lucide-react';
 
 export default function DashboardView({ 
   membros = [], 
@@ -25,44 +25,7 @@ export default function DashboardView({
       {/* 1. Grade de Cartões com as 3 Métricas Principais */}
       <DashboardStats membros={membros} />
 
-      {/* 2. Ações Rápidas & Atalhos */}
-      <div className="card-panel">
-        <h2 style={{ fontSize: '1.1rem', marginBottom: '1.25rem', color: 'var(--text-main)' }}>
-          Ações Rápidas & Atalhos
-        </h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-          <button 
-            className="btn-primary" 
-            onClick={onOpenNewMemberModal}
-            style={{ justifyContent: 'center', padding: '1rem' }}
-          >
-            <UserPlus size={20} />
-            <span>Cadastrar Novo Membro</span>
-          </button>
-
-          <button 
-            className="btn-secondary" 
-            onClick={() => setActiveTab('membros')}
-            style={{ justifyContent: 'center', padding: '1rem' }}
-          >
-            <Users size={20} style={{ color: 'var(--primary-gold)' }} />
-            <span>Ver Lista de Membros</span>
-            <ArrowRight size={16} />
-          </button>
-
-          <button 
-            className="btn-secondary" 
-            onClick={() => setActiveTab('aniversariantes')}
-            style={{ justifyContent: 'center', padding: '1rem' }}
-          >
-            <Cake size={20} style={{ color: '#f59e0b' }} />
-            <span>Ver Aniversariantes do Mês</span>
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      </div>
-
-      {/* 3. Destaque dos Aniversariantes do Mês Atual */}
+      {/* 2. Destaque dos Aniversariantes do Mês Atual */}
       <div className="card-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h2 style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
