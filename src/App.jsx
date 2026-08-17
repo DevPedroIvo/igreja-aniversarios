@@ -5,22 +5,33 @@ import MemberList from './components/MemberList';
 import BirthdayList from './components/BirthdayList';
 import ConfigView from './components/ConfigView';
 import MemberFormModal from './components/MemberFormModal';
-import SupabaseModal from './components/SupabaseModal';
 import Footer from './components/Footer';
 
-import { fetchMembros, createMembro, updateMembro, deleteMembro, isSupabaseConfigured } from './lib/supabase';
+import { fetchMembros, createMembro, updateMembro, deleteMembro } from './lib/supabase';
 import './App.css';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'membros' | 'aniversariantes' | 'configuracoes'
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dbSource, setDbSource] = useState('local');
+
+  // Tema Claro / Escuro
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('dunamis_theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('dunamis_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = (newTheme) => {
+    setTheme(newTheme);
+  };
 
   // Controle de Modais
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
-  const [configModalOpen, setConfigModalOpen] = useState(false);
 
   // Mensagem Toast de Notificação
   const [toast, setToast] = useState(null);
@@ -30,13 +41,12 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Carregar lista de membros do Supabase / LocalStorage
+  // Carregar lista de membros
   const loadMembros = async () => {
     setLoading(true);
     try {
-      const { data, source } = await fetchMembros();
+      const { data } = await fetchMembros();
       setMembros(data || []);
-      setDbSource(source);
     } catch (err) {
       console.error('Erro ao carregar membros:', err);
       showToast('Erro ao carregar lista de membros', 'error');
@@ -60,7 +70,7 @@ export default function App() {
     }).length;
   }, [membros]);
 
-  // Handler para Salvar (Cadastrar ou Atualizar) Membro
+  // Salvar (Cadastrar ou Atualizar) Membro
   const handleSaveMember = async (formData, id) => {
     try {
       if (id) {
@@ -77,7 +87,25 @@ export default function App() {
     }
   };
 
-  // Handler para Excluir Membro
+  // Importar membros em lote (JSON/CSV)
+  const handleImportMembros = async (importedList) => {
+    try {
+      for (const m of importedList) {
+        if (m.nome) {
+          await createMembro({
+            nome: m.nome,
+            data_nascimento: m.data_nascimento || '',
+            observacoes: m.observacoes || ''
+          });
+        }
+      }
+      await loadMembros();
+    } catch (err) {
+      showToast('Erro ao importar membros', 'error');
+    }
+  };
+
+  // Excluir Membro
   const handleDeleteMember = async (id, name) => {
     if (window.confirm(`Tem certeza que deseja excluir o cadastro de "${name}"?`)) {
       try {
@@ -129,7 +157,6 @@ export default function App() {
         setActiveTab={setActiveTab}
         membrosCount={membros.length}
         aniversariantesCount={currentMonthAniversariantesCount}
-        onOpenConfigModal={() => setConfigModalOpen(true)}
         onOpenNewMemberModal={handleNewMemberClick}
       />
 
@@ -168,7 +195,11 @@ export default function App() {
 
             {activeTab === 'configuracoes' && (
               <ConfigView
-                onConfigSaved={loadMembros}
+                membros={membros}
+                onImportMembros={handleImportMembros}
+                theme={theme}
+                onToggleTheme={handleToggleTheme}
+                showToast={showToast}
               />
             )}
           </>
@@ -184,13 +215,6 @@ export default function App() {
         onClose={() => setFormModalOpen(false)}
         onSave={handleSaveMember}
         memberToEdit={editingMember}
-      />
-
-      {/* Modal de Configuração do Supabase */}
-      <SupabaseModal
-        isOpen={configModalOpen}
-        onClose={() => setConfigModalOpen(false)}
-        onConfigSaved={loadMembros}
       />
     </div>
   );

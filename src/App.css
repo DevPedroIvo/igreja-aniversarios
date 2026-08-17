@@ -17,10 +17,10 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(11, 15, 25, 0.85);
+  background: var(--header-bg, rgba(11, 15, 25, 0.85));
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.5rem;
 }
 
 .header-inner {
@@ -29,8 +29,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 .brand {
@@ -69,10 +69,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(21, 28, 46, 0.7);
+  background: var(--bg-card);
   padding: 0.35rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
+  max-width: 100%;
+  overflow-x: auto;
+  flex-shrink: 1;
 }
 
 .tab-btn {

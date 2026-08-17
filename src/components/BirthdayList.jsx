@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Cake, Calendar, Gift, Heart, PartyPopper, FileText } from 'lucide-react';
+import { Cake, Calendar, Gift, Search, PartyPopper, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const MESES = [
@@ -22,8 +22,9 @@ export default function BirthdayList({ membros }) {
   const currentDayNum = new Date().getDate();
 
   const [selectedMonth, setSelectedMonth] = useState(currentMonthNum);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Aniversariantes do Mês Selecionado
+  // Aniversariantes do Mês Selecionado (Filtrados por Busca)
   const birthdayMembers = useMemo(() => {
     return membros
       .filter(m => {
@@ -31,7 +32,17 @@ export default function BirthdayList({ membros }) {
         const parts = m.data_nascimento.split(/[-/]/);
         if (parts.length < 2) return false;
         const month = parseInt(parts[1], 10);
-        return month === selectedMonth;
+
+        // Filtro de mês
+        const matchesMonth = month === selectedMonth;
+        
+        // Filtro de busca por nome ou observação
+        const query = searchQuery.trim().toLowerCase();
+        const matchesSearch = !query || 
+          (m.nome && m.nome.toLowerCase().includes(query)) ||
+          (m.observacoes && m.observacoes.toLowerCase().includes(query));
+
+        return matchesMonth && matchesSearch;
       })
       .sort((a, b) => {
         const partsA = a.data_nascimento.split(/[-/]/);
@@ -40,16 +51,19 @@ export default function BirthdayList({ membros }) {
         const dayB = parseInt(partsB[2] || partsB[0], 10);
         return dayA - dayB;
       });
-  }, [membros, selectedMonth]);
+  }, [membros, selectedMonth, searchQuery]);
 
-  // Verificar se há aniversariantes hoje
+  // Verificar se há aniversariantes hoje no mês atual
   const todaysBirthdays = useMemo(() => {
-    return birthdayMembers.filter(m => {
+    return membros.filter(m => {
+      if (!m.data_nascimento) return false;
       const parts = m.data_nascimento.split(/[-/]/);
+      if (parts.length < 2) return false;
+      const month = parseInt(parts[1], 10);
       const day = parseInt(parts[2] || parts[0], 10);
-      return selectedMonth === currentMonthNum && day === currentDayNum;
+      return month === currentMonthNum && day === currentDayNum;
     });
-  }, [birthdayMembers, selectedMonth, currentMonthNum, currentDayNum]);
+  }, [membros, currentMonthNum, currentDayNum]);
 
   // Soltar confete caso haja aniversariante hoje
   useEffect(() => {
@@ -66,7 +80,7 @@ export default function BirthdayList({ membros }) {
     }
   }, [todaysBirthdays, selectedMonth, currentMonthNum]);
 
-  // Calcular a idade que a pessoa completará/completou neste ano
+  // Calcular a idade
   const calculateAge = (birthDateStr) => {
     if (!birthDateStr) return null;
     const year = parseInt(birthDateStr.split(/[-/]/)[0], 10);
@@ -79,7 +93,7 @@ export default function BirthdayList({ membros }) {
 
   return (
     <div className="animate-fade-in">
-      {/* Banner Destaque Aniversariantes do Mês */}
+      {/* Banner Destaque Aniversariantes do Mês & Hoje */}
       <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
         <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(21, 28, 46, 0.8))', borderColor: 'var(--border-highlight)' }}>
           <div className="stat-icon" style={{ background: 'var(--primary-gold)', color: 'var(--text-dark)' }}>
@@ -102,36 +116,55 @@ export default function BirthdayList({ membros }) {
         </div>
       </div>
 
-      {/* Seletor de Mês */}
-      <div className="month-selector">
-        {MESES.map(m => (
-          <button
-            key={m.value}
-            className={`month-btn ${selectedMonth === m.value ? 'active' : ''}`}
-            onClick={() => setSelectedMonth(m.value)}
-          >
-            {m.label} {m.value === currentMonthNum ? ' (Atual)' : ''}
-          </button>
-        ))}
+      {/* Barra de Busca & Seletor de Mês */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+        
+        {/* Campo de Pesquisa por Nome */}
+        <div className="search-box">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Pesquisar aniversariante por nome ou observação..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Seletor de Mês */}
+        <div className="month-selector" style={{ marginBottom: 0 }}>
+          {MESES.map(m => (
+            <button
+              key={m.value}
+              className={`month-btn ${selectedMonth === m.value ? 'active' : ''}`}
+              onClick={() => setSelectedMonth(m.value)}
+            >
+              {m.label} {m.value === currentMonthNum ? ' (Atual)' : ''}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Título e Lista de Cartões */}
       <div className="card-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Gift size={22} style={{ color: 'var(--primary-gold)' }} />
             <span>Aniversariantes de {selectedMonthLabel}</span>
           </h2>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Organizado por dia do mês
+            {birthdayMembers.length} {birthdayMembers.length === 1 ? 'membro encontrado' : 'membros encontrados'}
           </span>
         </div>
 
         {birthdayMembers.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'var(--text-muted)' }}>
             <Cake size={56} style={{ opacity: 0.25, marginBottom: '1rem' }} />
-            <p style={{ fontSize: '1.15rem', fontWeight: 600 }}>Nenhum aniversariante em {selectedMonthLabel}</p>
-            <p style={{ fontSize: '0.9rem' }}>Nenhum membro cadastrado faz aniversário neste mês.</p>
+            <p style={{ fontSize: '1.15rem', fontWeight: 600 }}>
+              {searchQuery ? `Nenhum aniversariante encontrado para "${searchQuery}"` : `Nenhum aniversariante em ${selectedMonthLabel}`}
+            </p>
+            <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+              {searchQuery ? 'Tente buscar com outro nome.' : 'Nenhum membro cadastrado faz aniversário neste mês.'}
+            </p>
           </div>
         ) : (
           <div className="birthday-grid">

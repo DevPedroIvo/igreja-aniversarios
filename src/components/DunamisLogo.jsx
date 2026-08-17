@@ -1,19 +1,9 @@
 import React from 'react';
-import logoUrl from '../assets/logo-dunamis.png';
 
-export default function DunamisLogo({ height = 48, showSubtitle = true, className = "" }) {
+export default function DunamisLogo({ height = 48, className = "" }) {
   return (
-    <div className={`dunamis-logo-container ${className}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.875rem' }}>
-      <img 
-        src={logoUrl} 
-        alt="Ministério Dunamis - Poder e Graça" 
-        style={{ 
-          height: `${height}px`, 
-          width: 'auto', 
-          objectFit: 'contain',
-          filter: 'drop-shadow(0 2px 8px rgba(245, 158, 11, 0.2))'
-        }} 
-      />
+    <div className={`dunamis-logo-container ${className}`} style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <DunamisLogoVector height={height} />
     </div>
   );
 }
@@ -26,7 +16,7 @@ export function DunamisLogoVector({ height = 50, className = "" }) {
       className={className} 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
-      style={{ overflow: 'visible' }}
+      style={{ overflow: 'visible', verticalAlign: 'middle' }}
     >
       <defs>
         {/* Gradiente da Chama Dunamis */}
@@ -48,10 +38,10 @@ export function DunamisLogoVector({ height = 50, className = "" }) {
           d="M 65,160 C 35,150 15,120 15,90 C 15,65 30,50 40,35 C 45,45 50,55 45,70 C 55,50 70,25 80,5 C 85,35 100,55 115,70 C 125,80 135,95 130,115 C 125,135 110,155 85,162 C 78,164 71,162 65,160 Z" 
           fill="url(#dunamisFlameGradient)" 
         />
-        {/* Recorte Curvo Interno (Espaço Negativo S-Curve) */}
+        {/* Recorte Curvo Interno (Adapta ao tema claro/escuro) */}
         <path 
           d="M 58,155 C 80,140 90,115 85,85 C 82,65 72,48 78,25 C 68,45 52,70 58,100 C 62,120 50,140 58,155 Z" 
-          fill="#0B0F19" 
+          fill="var(--logo-cutout-color, #0B0F19)" 
         />
         {/* Chama Interna Brilho Laranja */}
         <path 
@@ -61,8 +51,8 @@ export function DunamisLogoVector({ height = 50, className = "" }) {
         />
       </g>
 
-      {/* Tipografia Vetorial: Ministério Dunamis */}
-      <g fill="currentColor">
+      {/* Tipografia Vetorial: Ministério Dunamis (Adaptação dinâmica de cor: Branco no Escuro, Preto no Claro) */}
+      <g fill="var(--logo-text-color, #FFFFFF)">
         {/* Texto "Ministério" */}
         <text 
           x="150" 
@@ -71,7 +61,6 @@ export function DunamisLogoVector({ height = 50, className = "" }) {
           fontWeight="800" 
           fontSize="36" 
           letterSpacing="0.02em"
-          fill="#FFFFFF"
         >
           Ministério
         </text>
@@ -84,7 +73,6 @@ export function DunamisLogoVector({ height = 50, className = "" }) {
           fontWeight="900" 
           fontSize="56" 
           letterSpacing="0.04em"
-          fill="#FFFFFF"
         >
           Dunamis
         </text>

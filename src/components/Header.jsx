@@ -1,7 +1,6 @@
 import React from 'react';
-import { LayoutDashboard, Users, Cake, Settings, UserPlus, Database } from 'lucide-react';
+import { LayoutDashboard, Users, Cake, Settings, UserPlus } from 'lucide-react';
 import DunamisLogo from './DunamisLogo';
-import { isSupabaseConfigured } from '../lib/supabase';
 
 export default function Header({ 
   activeTab, 
@@ -11,8 +10,6 @@ export default function Header({
   onOpenConfigModal, 
   onOpenNewMemberModal 
 }) {
-  const isConnected = isSupabaseConfigured();
-
   return (
     <header className="app-header">
       <div className="header-inner">
@@ -58,7 +55,7 @@ export default function Header({
           </button>
         </nav>
 
-        {/* Ações Rápidas & Indicador Supabase */}
+        {/* Botão de Cadastrar Membro */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button 
             className="btn-primary"
@@ -67,16 +64,6 @@ export default function Header({
             <UserPlus size={18} />
             <span>Cadastrar Membro</span>
           </button>
-
-          <div 
-            className={`status-badge ${isConnected ? 'supabase' : 'local'}`}
-            onClick={() => setActiveTab('configuracoes')}
-            title={isConnected ? "Conectado ao Supabase SQL Database" : "Modo de Teste Local - Clique para Configurar Supabase"}
-          >
-            <Database size={14} />
-            <span className="status-dot"></span>
-            <span>{isConnected ? 'Supabase Ativo' : 'Supabase Config'}</span>
-          </div>
         </div>
       </div>
     </header>
