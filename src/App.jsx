@@ -7,7 +7,7 @@ import ConfigView from './components/ConfigView';
 import MemberFormModal from './components/MemberFormModal';
 import Footer from './components/Footer';
 
-import { fetchMembros, createMembro, updateMembro, deleteMembro } from './lib/supabase';
+import { fetchMembros, createMembro, updateMembro, deleteMembro, importBatchMembros } from './lib/supabase';
 import './App.css';
 
 export default function App() {
@@ -87,20 +87,13 @@ export default function App() {
     }
   };
 
-  // Importar membros em lote (JSON/CSV)
+  // Importar membros em lote (JSON/CSV/Word)
   const handleImportMembros = async (importedList) => {
     try {
-      for (const m of importedList) {
-        if (m.nome) {
-          await createMembro({
-            nome: m.nome,
-            data_nascimento: m.data_nascimento || '',
-            observacoes: m.observacoes || ''
-          });
-        }
-      }
+      await importBatchMembros(importedList);
       await loadMembros();
     } catch (err) {
+      console.error('Erro na importação em lote:', err);
       showToast('Erro ao importar membros', 'error');
     }
   };

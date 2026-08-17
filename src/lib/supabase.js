@@ -147,6 +147,46 @@ export async function createMembro(novoMembro) {
   return { data: createdMember, source: 'local' };
 }
 
+export async function importBatchMembros(novosMembros) {
+  const payloads = novosMembros
+    .filter(m => m && m.nome && m.nome.trim())
+    .map(m => ({
+      nome: m.nome.trim(),
+      data_nascimento: m.data_nascimento || '',
+      observacoes: m.observacoes || '',
+      created_at: new Date().toISOString()
+    }));
+
+  if (payloads.length === 0) return { data: [], source: 'local' };
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('membros')
+        .insert(payloads)
+        .select();
+
+      if (!error && data) {
+        return { data, source: 'supabase' };
+      } else if (error) {
+        console.error('Erro na inserção em lote no Supabase:', error);
+      }
+    } catch (err) {
+      console.error('Falha ao comunicar em lote com Supabase:', err);
+    }
+  }
+
+  // Fallback LocalStorage instantâneo
+  const existing = getLocalMembers();
+  const createdWithIds = payloads.map((p, idx) => ({
+    ...p,
+    id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now() + idx)
+  }));
+  const updatedList = [...createdWithIds, ...existing];
+  setLocalMembers(updatedList);
+  return { data: createdWithIds, source: 'local' };
+}
+
 export async function updateMembro(id, dadosAtualizados) {
   if (isSupabaseConfigured() && supabase) {
     try {

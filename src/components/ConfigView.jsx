@@ -134,18 +134,25 @@ export default function ConfigView({
           }
         }
       } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc') || fileName.endsWith('.txt')) {
-        const text = await file.text();
-        // Extrair texto limpo
-        const cleanText = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-        const lines = cleanText.split(/[\r\n;.|\\]+/).map(l => l.trim()).filter(Boolean);
+        const rawText = await file.text();
+        // Filtrar apenas texto limpo e remover tags XML internas de arquivos docx
+        const printableText = rawText.replace(/<[^>]+>/g, ' ').replace(/[^\x20-\x7E\xA0-\xFF\u00C0-\u024F\r\n]/g, ' ');
+        const rawLines = printableText.split(/[\r\n;.|\\]+/).map(l => l.trim()).filter(l => l.length >= 3);
         const dateRegex = /(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})|(\d{4}[/-]\d{1,2}[/-]\d{1,2})/;
+        const nameSeen = new Set();
 
-        lines.forEach(line => {
+        for (const line of rawLines) {
+          // Ignorar termos de metadados internos de arquivos Word/ZIP
+          if (line.includes('word/') || line.includes('xml') || line.includes('theme') || line.includes('rel') || line.length > 100) {
+            continue;
+          }
+
           const match = line.match(dateRegex);
+          let nameCandidate = '';
+          let dateIso = '';
+
           if (match) {
             const rawDate = match[0];
-            let dateIso = rawDate;
-
             if (rawDate.includes('/')) {
               const parts = rawDate.split('/');
               if (parts.length === 3) {
@@ -158,26 +165,30 @@ export default function ConfigView({
                   dateIso = `${year}-${month}-${day}`;
                 }
               }
+            } else {
+              dateIso = rawDate;
             }
 
-            let namePart = line.replace(rawDate, '').replace(/[-:,–—]/g, ' ').replace(/\s+/g, ' ').trim();
-            namePart = namePart.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
-
-            if (namePart.length >= 2) {
-              newMembers.push({
-                nome: namePart,
-                data_nascimento: dateIso,
-                observacoes: 'Importado de Documento Word'
-              });
+            nameCandidate = line.replace(rawDate, '').replace(/[-:,–—]/g, ' ').replace(/\s+/g, ' ').trim();
+            nameCandidate = nameCandidate.replace(/^(nome|membro|aniversariante|data|obs|observações)/i, '').trim();
+          } else {
+            // Nome comum (somente letras e espaços em português)
+            if (/^[a-zA-ZÀ-ÿ\s]{3,50}$/.test(line)) {
+              nameCandidate = line.trim();
             }
-          } else if (line.length >= 3 && !line.toLowerCase().includes('document') && !line.toLowerCase().includes('word')) {
-            newMembers.push({
-              nome: line.replace(/^(nome|membro|aniversariante)/i, '').trim(),
-              data_nascimento: '',
-              observacoes: 'Importado de Documento Word'
-            });
           }
-        });
+
+          if (nameCandidate && nameCandidate.length >= 3 && !nameSeen.has(nameCandidate.toLowerCase())) {
+            nameSeen.add(nameCandidate.toLowerCase());
+            newMembers.push({
+              nome: nameCandidate,
+              data_nascimento: dateIso,
+              observacoes: 'Importado de Documento'
+            });
+
+            if (newMembers.length >= 300) break;
+          }
+        }
       }
 
       if (newMembers.length === 0) {
