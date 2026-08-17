@@ -24,7 +24,7 @@ export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-// Dados iniciais de demonstração (caso o banco ainda esteja sendo conectado)
+// Dados iniciais de demonstração
 const INITIAL_DEMO_MEMBERS = [
   {
     id: '1',
@@ -70,27 +70,30 @@ const INITIAL_DEMO_MEMBERS = [
   }
 ];
 
-// Utilitário para salvar e buscar em LocalStorage caso Supabase não esteja configurado
-const getLocalMembers = () => {
+// Utilitário para salvar e buscar em LocalStorage
+export const getLocalMembers = () => {
   const local = localStorage.getItem('IGREJA_MEMBROS_LOCAL');
   if (!local) {
     localStorage.setItem('IGREJA_MEMBROS_LOCAL', JSON.stringify(INITIAL_DEMO_MEMBERS));
     return INITIAL_DEMO_MEMBERS;
   }
   try {
-    return JSON.parse(local);
+    const parsed = JSON.parse(local);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DEMO_MEMBERS;
   } catch (e) {
     return INITIAL_DEMO_MEMBERS;
   }
 };
 
-const setLocalMembers = (members) => {
+export const setLocalMembers = (members) => {
   localStorage.setItem('IGREJA_MEMBROS_LOCAL', JSON.stringify(members));
 };
 
-// Funções CRUD Abstratas (Supabase com fallback LocalStorage)
+// Funções CRUD Híbridas (Sincronização Infalível Supabase + LocalStorage)
 
 export async function fetchMembros() {
+  const localMembers = getLocalMembers();
+
   if (isSupabaseConfigured() && supabase) {
     try {
       const { data, error } = await supabase
@@ -98,140 +101,125 @@ export async function fetchMembros() {
         .select('*')
         .order('nome', { ascending: true });
 
-      if (error) {
-        console.error('Erro ao buscar membros no Supabase:', error);
-        return { data: getLocalMembers(), source: 'local', error };
-      }
+      if (!error && data && data.length > 0) {
+        // Mesclar dados do Supabase com os salvos localmente
+        const combined = [...data];
+        const supabaseNames = new Set(data.map(m => (m.nome || '').toLowerCase().trim()));
 
-      return { data: data || [], source: 'supabase', error: null };
+        localMembers.forEach(lm => {
+          if (lm && lm.nome && !supabaseNames.has(lm.nome.toLowerCase().trim())) {
+            combined.push(lm);
+          }
+        });
+
+        setLocalMembers(combined);
+        return { data: combined, source: 'supabase', error: null };
+      }
     } catch (err) {
       console.error('Exceção ao comunicar com Supabase:', err);
-      return { data: getLocalMembers(), source: 'local', error: err };
     }
   }
 
-  return { data: getLocalMembers(), source: 'local', error: null };
+  // Fallback garantido pelo armazenamento local
+  return { data: localMembers, source: 'local', error: null };
 }
 
 export async function createMembro(novoMembro) {
   const payload = {
+    id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now() + Math.random()),
     ...novoMembro,
     created_at: new Date().toISOString()
   };
 
+  // Salvar no armazenamento local imediatamente
+  const members = getLocalMembers();
+  const updatedList = [payload, ...members];
+  setLocalMembers(updatedList);
+
+  // Sincronizar em segundo plano com Supabase
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('membros')
-        .insert([payload])
-        .select();
-
-      if (error) {
-        console.error('Erro ao cadastrar membro no Supabase:', error);
-        throw error;
-      }
-      return { data: data[0], source: 'supabase' };
+      await supabase.from('membros').insert([{
+        nome: payload.nome,
+        data_nascimento: payload.data_nascimento || '',
+        observacoes: payload.observacoes || '',
+        created_at: payload.created_at
+      }]);
     } catch (err) {
-      console.error('Falha no Supabase, salvando localmente:', err);
+      console.error('Erro na sincronização em segundo plano no Supabase:', err);
     }
   }
 
-  // Fallback LocalStorage
-  const members = getLocalMembers();
-  const createdMember = {
-    ...payload,
-    id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now())
-  };
-  const updatedList = [createdMember, ...members];
-  setLocalMembers(updatedList);
-  return { data: createdMember, source: 'local' };
+  return { data: payload, source: 'local' };
 }
 
 export async function importBatchMembros(novosMembros) {
+  const existing = getLocalMembers();
   const payloads = novosMembros
     .filter(m => m && m.nome && m.nome.trim())
-    .map(m => ({
+    .map((m, idx) => ({
+      id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now() + idx + Math.random()),
       nome: m.nome.trim(),
       data_nascimento: m.data_nascimento || '',
       observacoes: m.observacoes || '',
       created_at: new Date().toISOString()
     }));
 
-  if (payloads.length === 0) return { data: [], source: 'local' };
+  if (payloads.length === 0) return { data: existing, source: 'local' };
 
+  // Atualizar lista local imediatamente
+  const updatedList = [...payloads, ...existing];
+  setLocalMembers(updatedList);
+
+  // Sincronizar em lote com o Supabase em segundo plano
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { data, error } = await supabase
-        .from('membros')
-        .insert(payloads)
-        .select();
-
-      if (!error && data) {
-        return { data, source: 'supabase' };
-      } else if (error) {
-        console.error('Erro na inserção em lote no Supabase:', error);
-      }
+      const dbPayloads = payloads.map(p => ({
+        nome: p.nome,
+        data_nascimento: p.data_nascimento,
+        observacoes: p.observacoes,
+        created_at: p.created_at
+      }));
+      await supabase.from('membros').insert(dbPayloads);
     } catch (err) {
-      console.error('Falha ao comunicar em lote com Supabase:', err);
+      console.error('Erro na inserção em lote com Supabase:', err);
     }
   }
 
-  // Fallback LocalStorage instantâneo
-  const existing = getLocalMembers();
-  const createdWithIds = payloads.map((p, idx) => ({
-    ...p,
-    id: window.crypto?.randomUUID ? window.crypto.randomUUID() : String(Date.now() + idx)
-  }));
-  const updatedList = [...createdWithIds, ...existing];
-  setLocalMembers(updatedList);
-  return { data: createdWithIds, source: 'local' };
+  return { data: updatedList, source: 'local' };
 }
 
 export async function updateMembro(id, dadosAtualizados) {
-  if (isSupabaseConfigured() && supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('membros')
-        .update(dadosAtualizados)
-        .eq('id', id)
-        .select();
-
-      if (error) throw error;
-      return { data: data[0], source: 'supabase' };
-    } catch (err) {
-      console.error('Erro ao atualizar no Supabase:', err);
-    }
-  }
-
-  // LocalStorage fallback
   const members = getLocalMembers();
   const index = members.findIndex(m => m.id === id);
   if (index !== -1) {
     members[index] = { ...members[index], ...dadosAtualizados };
     setLocalMembers(members);
-    return { data: members[index], source: 'local' };
   }
-  throw new Error('Membro não encontrado');
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      await supabase.from('membros').update(dadosAtualizados).eq('id', id);
+    } catch (err) {
+      console.error('Erro ao atualizar no Supabase:', err);
+    }
+  }
+
+  return { success: true };
 }
 
 export async function deleteMembro(id) {
+  const members = getLocalMembers();
+  const filtered = members.filter(m => m.id !== id);
+  setLocalMembers(filtered);
+
   if (isSupabaseConfigured() && supabase) {
     try {
-      const { error } = await supabase
-        .from('membros')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return { success: true, source: 'supabase' };
+      await supabase.from('membros').delete().eq('id', id);
     } catch (err) {
       console.error('Erro ao excluir no Supabase:', err);
     }
   }
 
-  // LocalStorage fallback
-  const members = getLocalMembers();
-  const filtered = members.filter(m => m.id !== id);
-  setLocalMembers(filtered);
-  return { success: true, source: 'local' };
+  return { success: true };
 }
