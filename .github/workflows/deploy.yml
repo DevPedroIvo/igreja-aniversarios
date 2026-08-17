@@ -3,23 +3,19 @@ name: Deploy para o GitHub Pages
 on:
   push:
     branches: [ main, master ]
+  workflow_dispatch:
 
-# Conceder permissões para GITHUB_TOKEN implantar no GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Permitir apenas uma implantação simultânea
 concurrency:
   group: 'pages'
   cancel-in-progress: true
 
 jobs:
   build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repositório
@@ -28,20 +24,19 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Instalar dependências
-        run: npm ci
+        run: npm install
 
       - name: Gerar build de produção
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Configurar Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact de build
         uses: actions/upload-pages-artifact@v3
