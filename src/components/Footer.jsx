@@ -1,5 +1,6 @@
 import React from 'react';
-import { Church, Github, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import DunamisLogo from './DunamisLogo';
 
 export default function Footer() {
   return (
@@ -20,15 +21,13 @@ export default function Footer() {
         flexWrap: 'wrap',
         gap: '1rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Church size={18} style={{ color: 'var(--primary-gold)' }} />
-          <span>Sistema Interno da Igreja • Gestão de Membros & Aniversariantes</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <DunamisLogo height={32} />
+          <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>• Gestão de Membros & Aniversariantes</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            Hospedado via <Github size={14} /> GitHub Pages
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.8rem' }}>
+          <span>© {new Date().getFullYear()} Ministério Dunamis • Poder e Graça</span>
         </div>
       </div>
     </footer>

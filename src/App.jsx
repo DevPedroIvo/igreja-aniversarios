@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
+import DashboardView from './components/DashboardView';
 import MemberList from './components/MemberList';
 import BirthdayList from './components/BirthdayList';
+import ConfigView from './components/ConfigView';
 import MemberFormModal from './components/MemberFormModal';
 import SupabaseModal from './components/SupabaseModal';
 import Footer from './components/Footer';
@@ -10,7 +12,7 @@ import { fetchMembros, createMembro, updateMembro, deleteMembro, isSupabaseConfi
 import './App.css';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('membros'); // 'membros' | 'aniversariantes'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'membros' | 'aniversariantes' | 'configuracoes'
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dbSource, setDbSource] = useState('local');
@@ -52,7 +54,7 @@ export default function App() {
     const currentMonthNum = new Date().getMonth() + 1;
     return membros.filter(m => {
       if (!m.data_nascimento) return false;
-      const parts = m.data_nascimento.split('-');
+      const parts = m.data_nascimento.split(/[-/]/);
       if (parts.length < 2) return false;
       return parseInt(parts[1], 10) === currentMonthNum;
     }).length;
@@ -121,7 +123,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Header com Navegação e Status */}
+      {/* Header com Navegação Separada de 4 Abas */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -131,7 +133,7 @@ export default function App() {
         onOpenNewMemberModal={handleNewMemberClick}
       />
 
-      {/* Conteúdo Principal */}
+      {/* Conteúdo Principal por Aba Separada */}
       <main className="main-content">
         {loading ? (
           <div style={{ textAlign: 'center', padding: '5rem 1rem', color: 'var(--text-muted)' }}>
@@ -141,6 +143,14 @@ export default function App() {
           </div>
         ) : (
           <>
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                membros={membros}
+                onOpenNewMemberModal={handleNewMemberClick}
+                setActiveTab={setActiveTab}
+              />
+            )}
+
             {activeTab === 'membros' && (
               <MemberList
                 membros={membros}
@@ -153,6 +163,12 @@ export default function App() {
             {activeTab === 'aniversariantes' && (
               <BirthdayList
                 membros={membros}
+              />
+            )}
+
+            {activeTab === 'configuracoes' && (
+              <ConfigView
+                onConfigSaved={loadMembros}
               />
             )}
           </>

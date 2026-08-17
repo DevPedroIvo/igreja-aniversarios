@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Cake, Calendar, Phone, Sparkles, Gift, Heart, PartyPopper } from 'lucide-react';
+import { Cake, Calendar, Gift, Heart, PartyPopper, FileText } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const MESES = [
@@ -28,14 +28,16 @@ export default function BirthdayList({ membros }) {
     return membros
       .filter(m => {
         if (!m.data_nascimento) return false;
-        const parts = m.data_nascimento.split('-');
+        const parts = m.data_nascimento.split(/[-/]/);
         if (parts.length < 2) return false;
         const month = parseInt(parts[1], 10);
         return month === selectedMonth;
       })
       .sort((a, b) => {
-        const dayA = parseInt(a.data_nascimento.split('-')[2], 10);
-        const dayB = parseInt(b.data_nascimento.split('-')[2], 10);
+        const partsA = a.data_nascimento.split(/[-/]/);
+        const partsB = b.data_nascimento.split(/[-/]/);
+        const dayA = parseInt(partsA[2] || partsA[0], 10);
+        const dayB = parseInt(partsB[2] || partsB[0], 10);
         return dayA - dayB;
       });
   }, [membros, selectedMonth]);
@@ -43,8 +45,8 @@ export default function BirthdayList({ membros }) {
   // Verificar se há aniversariantes hoje
   const todaysBirthdays = useMemo(() => {
     return birthdayMembers.filter(m => {
-      const parts = m.data_nascimento.split('-');
-      const day = parseInt(parts[2], 10);
+      const parts = m.data_nascimento.split(/[-/]/);
+      const day = parseInt(parts[2] || parts[0], 10);
       return selectedMonth === currentMonthNum && day === currentDayNum;
     });
   }, [birthdayMembers, selectedMonth, currentMonthNum, currentDayNum]);
@@ -67,18 +69,10 @@ export default function BirthdayList({ membros }) {
   // Calcular a idade que a pessoa completará/completou neste ano
   const calculateAge = (birthDateStr) => {
     if (!birthDateStr) return null;
-    const year = parseInt(birthDateStr.split('-')[0], 10);
+    const year = parseInt(birthDateStr.split(/[-/]/)[0], 10);
+    if (!year || isNaN(year)) return null;
     const currentYear = new Date().getFullYear();
     return currentYear - year;
-  };
-
-  // WhatsApp Link Festivo
-  const getBirthdayWhatsAppLink = (phoneStr, nameStr) => {
-    if (!phoneStr) return null;
-    const cleanNum = phoneStr.replace(/\D/g, '');
-    const numWithCountry = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`;
-    const msg = encodeURIComponent(`A paz do Senhor, ${nameStr}! 🎉🎂 Feliz Aniversário! Que Deus continue abençoando rica e grandemente a sua vida, família e ministério! 📜✨`);
-    return `https://wa.me/${numWithCountry}?text=${msg}`;
   };
 
   const selectedMonthLabel = MESES.find(m => m.value === selectedMonth)?.label;
@@ -126,7 +120,7 @@ export default function BirthdayList({ membros }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Gift size={22} style={{ color: 'var(--primary-gold)' }} />
-            <span>Mêsversários de {selectedMonthLabel}</span>
+            <span>Aniversariantes de {selectedMonthLabel}</span>
           </h2>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
             Organizado por dia do mês
@@ -142,10 +136,10 @@ export default function BirthdayList({ membros }) {
         ) : (
           <div className="birthday-grid">
             {birthdayMembers.map(membro => {
-              const day = parseInt(membro.data_nascimento.split('-')[2], 10);
+              const parts = membro.data_nascimento.split(/[-/]/);
+              const day = parseInt(parts[2] || parts[0], 10);
               const age = calculateAge(membro.data_nascimento);
               const isToday = selectedMonth === currentMonthNum && day === currentDayNum;
-              const waLink = getBirthdayWhatsAppLink(membro.telefone, membro.nome);
 
               return (
                 <div key={membro.id} className={`birthday-card ${isToday ? 'today' : ''}`}>
@@ -162,29 +156,22 @@ export default function BirthdayList({ membros }) {
                         {membro.nome}
                       </div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {membro.ministerio || 'Membro'} • {age ? `${age} anos` : ''}
+                        {age ? `${age} anos` : 'Aniversariante'}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem' }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Calendar size={13} />
-                      <span>{membro.data_nascimento.split('-').reverse().join('/')}</span>
+                      <Calendar size={13} style={{ color: 'var(--primary-gold)' }} />
+                      <span>{parts.reverse().join('/')}</span>
                     </div>
 
-                    {waLink ? (
-                      <a 
-                        href={waLink} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="btn-whatsapp"
-                      >
-                        <Heart size={14} />
-                        <span>Parabenizar</span>
-                      </a>
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sem telefone</span>
+                    {membro.observacoes && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <FileText size={13} style={{ opacity: 0.7 }} />
+                        <span>{membro.observacoes}</span>
+                      </div>
                     )}
                   </div>
                 </div>

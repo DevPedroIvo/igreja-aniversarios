@@ -1,30 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Search, ArrowUpDown, Filter, Edit, Trash2, Phone, Calendar, User, Users, Shield, Sparkles } from 'lucide-react';
+import { Search, ArrowUpDown, Edit, Trash2, Calendar, User, Users, FileText } from 'lucide-react';
 
 export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOpenNewModal }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' = A-Z, 'desc' = Z-A
-  const [selectedMinistry, setSelectedMinistry] = useState('ALL');
 
-  // Obter lista única de ministérios
-  const ministerios = useMemo(() => {
-    const set = new Set(membros.map(m => m.ministerio).filter(Boolean));
-    return ['ALL', ...Array.from(set)];
-  }, [membros]);
-
-  // Filtragem e Ordenação Alfabética
+  // Filtragem por Busca e Ordenação Alfabética
   const filteredAndSortedMembros = useMemo(() => {
     return membros
       .filter(m => {
-        const matchesSearch = 
-          (m.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (m.telefone || '').includes(searchTerm) ||
-          (m.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (m.ministerio || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase();
+        const matchesName = (m.nome || '').toLowerCase().includes(term);
+        const matchesObs = (m.observacoes || '').toLowerCase().includes(term);
 
-        const matchesMinistry = selectedMinistry === 'ALL' || m.ministerio === selectedMinistry;
-
-        return matchesSearch && matchesMinistry;
+        return matchesName || matchesObs;
       })
       .sort((a, b) => {
         const nameA = (a.nome || '').toLowerCase();
@@ -35,7 +24,7 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
           return nameB.localeCompare(nameA, 'pt-BR');
         }
       });
-  }, [membros, searchTerm, sortOrder, selectedMinistry]);
+  }, [membros, searchTerm, sortOrder]);
 
   // Função para formatar data (AAAA-MM-DD -> DD/MM/AAAA)
   const formatDate = (dateStr) => {
@@ -57,57 +46,15 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
     return parts[0].substring(0, 2).toUpperCase();
   };
 
-  // Formatar número para link direto do WhatsApp
-  const getWhatsAppLink = (phoneStr, nameStr) => {
-    if (!phoneStr) return null;
-    const cleanNum = phoneStr.replace(/\D/g, '');
-    const numWithCountry = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`;
-    const msg = encodeURIComponent(`A paz do Senhor, ${nameStr}!`);
-    return `https://wa.me/${numWithCountry}?text=${msg}`;
-  };
-
   return (
     <div className="animate-fade-in">
-      {/* Métricas Principais */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
-            <Users size={24} />
-          </div>
-          <div>
-            <div className="stat-val">{membros.length}</div>
-            <div className="stat-label">Membros Cadastrados</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
-            <ArrowUpDown size={24} />
-          </div>
-          <div>
-            <div className="stat-val">{sortOrder === 'asc' ? 'A → Z' : 'Z → A'}</div>
-            <div className="stat-label">Ordem Alfabética</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-            <Shield size={24} />
-          </div>
-          <div>
-            <div className="stat-val">{ministerios.length > 1 ? ministerios.length - 1 : 1}</div>
-            <div className="stat-label">Ministérios / Cargos</div>
-          </div>
-        </div>
-      </div>
-
       {/* Barra de Controles e Filtros */}
       <div className="controls-bar">
         <div className="search-box">
           <Search className="search-icon" size={18} />
           <input 
             type="text" 
-            placeholder="Buscar por nome, telefone ou ministério..."
+            placeholder="Buscar membro por nome ou observações..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -123,21 +70,6 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
             <ArrowUpDown size={16} />
             <span>{sortOrder === 'asc' ? 'Ordem A-Z' : 'Ordem Z-A'}</span>
           </button>
-
-          {/* Filtro de Ministério */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Filter size={16} style={{ color: 'var(--text-muted)' }} />
-            <select 
-              value={selectedMinistry} 
-              onChange={(e) => setSelectedMinistry(e.target.value)}
-              style={{ width: 'auto', paddingRight: '2rem' }}
-            >
-              <option value="ALL">Todos os Ministérios</option>
-              {ministerios.filter(m => m !== 'ALL').map(min => (
-                <option key={min} value={min}>{min}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
@@ -169,16 +101,14 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Membro</th>
+                  <th>Nome Completo</th>
                   <th>Data de Nascimento</th>
-                  <th>Contato / WhatsApp</th>
-                  <th>Ministério / Cargo</th>
-                  <th>Ações</th>
+                  <th>Observações</th>
+                  <th style={{ textAlign: 'right' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAndSortedMembros.map(membro => {
-                  const waLink = getWhatsAppLink(membro.telefone, membro.nome);
                   return (
                     <tr key={membro.id}>
                       <td>
@@ -188,9 +118,6 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{membro.nome}</div>
-                            {membro.email && (
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{membro.email}</div>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -203,35 +130,18 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
                       </td>
 
                       <td>
-                        {membro.telefone ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span>{membro.telefone}</span>
-                            {waLink && (
-                              <a 
-                                href={waLink} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="btn-whatsapp"
-                                title="Enviar mensagem no WhatsApp"
-                              >
-                                <Phone size={12} />
-                                <span>WhatsApp</span>
-                              </a>
-                            )}
+                        {membro.observacoes ? (
+                          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <FileText size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+                            <span>{membro.observacoes}</span>
                           </div>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Não informado</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', italic: 'true' }}>Sem observações</span>
                         )}
                       </td>
 
                       <td>
-                        <span className="ministry-tag">
-                          {membro.ministerio || 'Membro'}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                           <button 
                             className="btn-secondary" 
                             style={{ padding: '0.4rem 0.6rem' }}

@@ -27,66 +27,42 @@ const INITIAL_DEMO_MEMBERS = [
     id: '1',
     nome: 'Ana Clara Silva',
     data_nascimento: '1995-08-15',
-    telefone: '(11) 98765-4321',
-    email: 'ana.clara@email.com',
-    ministerio: 'Louvor',
-    status: 'Ativo',
-    observacoes: 'Vocalista principal do ministério de louvor',
+    observacoes: 'Vocalista principal do louvor',
     created_at: new Date().toISOString()
   },
   {
     id: '2',
     nome: 'Carlos Eduardo Souza',
     data_nascimento: '1988-08-03',
-    telefone: '(11) 91234-5678',
-    email: 'carlos.souza@email.com',
-    ministerio: 'Diaconato',
-    status: 'Ativo',
-    observacoes: 'Coordenador da equipe de recepção e apoio',
+    observacoes: 'Coordenador de apoio e recepção',
     created_at: new Date().toISOString()
   },
   {
     id: '3',
     nome: 'Beatriz Lima',
     data_nascimento: '2001-01-20',
-    telefone: '(11) 97777-8888',
-    email: 'beatriz.lima@email.com',
-    ministerio: 'Jovens',
-    status: 'Ativo',
-    observacoes: 'Líder da rede de jovens e adolescentes',
+    observacoes: 'Líder da rede de jovens',
     created_at: new Date().toISOString()
   },
   {
     id: '4',
     nome: 'David Oliveira',
     data_nascimento: '1975-11-12',
-    telefone: '(11) 99999-0000',
-    email: 'david.oliveira@email.com',
-    ministerio: 'Presbitério',
-    status: 'Ativo',
-    observacoes: 'Presbítero encarregado do ensino bíblico',
+    observacoes: 'Encarregado do ensino bíblico',
     created_at: new Date().toISOString()
   },
   {
     id: '5',
     nome: 'Elena Pereira',
     data_nascimento: '1992-08-28',
-    telefone: '(11) 94444-3333',
-    email: 'elena.p@email.com',
-    ministerio: 'Infantil',
-    status: 'Ativo',
-    observacoes: 'Professora da Escola Bíblica Infantil',
+    observacoes: 'Professora da Escola Infantil',
     created_at: new Date().toISOString()
   },
   {
     id: '6',
     nome: 'Fernando Santos',
     data_nascimento: '1982-03-10',
-    telefone: '(11) 95555-6666',
-    email: 'fernando.s@email.com',
-    ministerio: 'Mídia & Som',
-    status: 'Ativo',
-    observacoes: 'Operador de mesa de som e transmissões ao vivo',
+    observacoes: 'Operador de transmissões ao vivo',
     created_at: new Date().toISOString()
   }
 ];

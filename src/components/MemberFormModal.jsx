@@ -1,28 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Save, CheckCircle } from 'lucide-react';
-
-const LISTA_MINISTERIOS = [
-  'Membro',
-  'Pastor(a)',
-  'Presbítero',
-  'Diácono / Diaconisa',
-  'Louvor & Música',
-  'Rede de Jovens',
-  'Ministério Infantil',
-  'Mídia & Sonorização',
-  'Intercessão & Oração',
-  'Recepção & Acolhimento',
-  'Ensino & EBD'
-];
+import { X, UserPlus, Save } from 'lucide-react';
 
 export default function MemberFormModal({ isOpen, onClose, onSave, memberToEdit }) {
   const [formData, setFormData] = useState({
     nome: '',
     data_nascimento: '',
-    telefone: '',
-    email: '',
-    ministerio: 'Membro',
-    data_batismo: '',
     observacoes: ''
   });
 
@@ -34,20 +16,12 @@ export default function MemberFormModal({ isOpen, onClose, onSave, memberToEdit 
       setFormData({
         nome: memberToEdit.nome || '',
         data_nascimento: memberToEdit.data_nascimento || '',
-        telefone: memberToEdit.telefone || '',
-        email: memberToEdit.email || '',
-        ministerio: memberToEdit.ministerio || 'Membro',
-        data_batismo: memberToEdit.data_batismo || '',
         observacoes: memberToEdit.observacoes || ''
       });
     } else {
       setFormData({
         nome: '',
         data_nascimento: '',
-        telefone: '',
-        email: '',
-        ministerio: 'Membro',
-        data_batismo: '',
         observacoes: ''
       });
     }
@@ -113,7 +87,7 @@ export default function MemberFormModal({ isOpen, onClose, onSave, memberToEdit 
                 />
               </div>
 
-              <div className="form-group">
+              <div className="form-group full-width">
                 <label className="form-label">Data de Nascimento *</label>
                 <input 
                   type="date"
@@ -123,43 +97,11 @@ export default function MemberFormModal({ isOpen, onClose, onSave, memberToEdit 
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Telefone / WhatsApp</label>
-                <input 
-                  type="text" 
-                  placeholder="(11) 99999-8888"
-                  value={formData.telefone}
-                  onChange={e => setFormData({ ...formData, telefone: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">E-mail</label>
-                <input 
-                  type="email" 
-                  placeholder="exemplo@email.com"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Ministério / Cargo</label>
-                <select 
-                  value={formData.ministerio}
-                  onChange={e => setFormData({ ...formData, ministerio: e.target.value })}
-                >
-                  {LISTA_MINISTERIOS.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </div>
-
               <div className="form-group full-width">
-                <label className="form-label">Observações / Anotações</label>
+                <label className="form-label">Observações</label>
                 <textarea 
-                  rows={3}
-                  placeholder="Qualquer informação adicional sobre o membro..."
+                  rows={4}
+                  placeholder="Observações ou informações adicionais sobre o membro..."
                   value={formData.observacoes}
                   onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
                 />
