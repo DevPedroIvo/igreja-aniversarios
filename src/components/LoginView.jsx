@@ -28,7 +28,9 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
       const u = username.trim().toLowerCase();
       const p = password.trim();
 
-      if ((u === 'admin' && p === 'admin') || (u === 'dunamis' && p === 'dunamis123') || p.length >= 4) {
+      const isValid = (u === 'admin' || u === 'dunamis') && (p === 'ministerio[' || p === 'ministerio' || p === 'dunamis123');
+
+      if (isValid) {
         onLogin({
           name: u === 'admin' ? 'Administrador' : username,
           role: 'Líder / Administrador',
@@ -198,7 +200,7 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
             </div>
           </div>
 
-          {/* Dica de Acesso Padrão */}
+          {/* Dica de Acesso Oficial */}
           <div style={{
             fontSize: '0.78rem',
             color: 'var(--text-muted)',
@@ -207,7 +209,7 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border-color)'
           }}>
-            🔑 <strong>Acesso Padrão:</strong> Usuário <code>admin</code> | Senha <code>admin</code>
+            🔑 <strong>Acesso do Sistema:</strong> Usuário <code>admin</code> | Senha <code>ministerio[</code>
           </div>
 
           {/* Botão de Entrar */}
