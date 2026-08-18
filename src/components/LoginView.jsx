@@ -28,7 +28,7 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
       const u = username.trim().toLowerCase();
       const p = password.trim();
 
-      const isValid = (u === 'admin' || u === 'dunamis') && (p === 'ministerio[' || p === 'ministerio' || p === 'dunamis123');
+      const isValid = (u === 'admin' || u === 'dunamis') && (p === 'ministerio' || p === 'dunamis123');
 
       if (isValid) {
         onLogin({
@@ -164,7 +164,7 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
             <div style={{ position: 'relative' }}>
               <input 
                 type={showPassword ? "text" : "password"} 
-                placeholder="Digite sua senha (Ex: admin)"
+                placeholder="Digite sua senha (Ex: ministerio)"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -198,18 +198,6 @@ export default function LoginView({ onLogin, theme = 'dark', onToggleTheme }) {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-          </div>
-
-          {/* Dica de Acesso Oficial */}
-          <div style={{
-            fontSize: '0.78rem',
-            color: 'var(--text-muted)',
-            background: 'var(--bg-subcard)',
-            padding: '0.6rem 0.875rem',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-color)'
-          }}>
-            🔑 <strong>Acesso do Sistema:</strong> Usuário <code>admin</code> | Senha <code>ministerio[</code>
           </div>
 
           {/* Botão de Entrar */}
