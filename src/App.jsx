@@ -6,11 +6,30 @@ import BirthdayList from './components/BirthdayList';
 import ConfigView from './components/ConfigView';
 import MemberFormModal from './components/MemberFormModal';
 import Footer from './components/Footer';
+import LoginView from './components/LoginView';
 
 import { fetchMembros, createMembro, updateMembro, deleteMembro, importBatchMembros, clearAllMembros } from './lib/supabase';
 import './App.css';
 
 export default function App() {
+  // Estado de Autenticação (Login)
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('dunamis_auth_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    localStorage.setItem('dunamis_auth_user', JSON.stringify(userData));
+    showToast(`Bem-vindo(a), ${userData.name}!`);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('dunamis_auth_user');
+    showToast('Sessão encerrada com sucesso.');
+  };
+
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'membros' | 'aniversariantes' | 'configuracoes'
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +153,17 @@ export default function App() {
     setFormModalOpen(true);
   };
 
+  // Se o usuário não estiver logado, exibe a Tela de Login
+  if (!user) {
+    return (
+      <LoginView 
+        onLogin={handleLogin}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+      />
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Toast Notification */}
@@ -162,6 +192,7 @@ export default function App() {
         membrosCount={membros.length}
         aniversariantesCount={currentMonthAniversariantesCount}
         onOpenNewMemberModal={handleNewMemberClick}
+        onLogout={handleLogout}
       />
 
       {/* Conteúdo Principal por Aba Separada */}

@@ -8,7 +8,8 @@ import {
   UserPlus, 
   MoreVertical, 
   X,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 import DunamisLogo from './DunamisLogo';
 
@@ -17,7 +18,8 @@ export default function Header({
   setActiveTab, 
   membrosCount, 
   aniversariantesCount, 
-  onOpenNewMemberModal 
+  onOpenNewMemberModal,
+  onLogout
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -81,6 +83,16 @@ export default function Header({
             <span>Cadastrar Membro</span>
           </button>
 
+          <button 
+            className="btn-secondary desktop-only-btn"
+            onClick={onLogout}
+            title="Sair do Sistema"
+            style={{ padding: '0.6rem 0.85rem' }}
+          >
+            <LogOut size={18} style={{ color: '#f43f5e' }} />
+            <span>Sair</span>
+          </button>
+
           {/* Botão 3 Pontinhos para Dispositivos Mobile */}
           <button 
             className="btn-menu-dots"
@@ -93,7 +105,7 @@ export default function Header({
         </div>
       </div>
 
-      {/* Drawer Lateral Mobile usando React Portal para document.body (Livre de travamentos e do container do header) */}
+      {/* Drawer Lateral Mobile usando React Portal para document.body */}
       {drawerOpen && typeof document !== 'undefined' && createPortal(
         <div className="mobile-drawer-overlay" onClick={() => setDrawerOpen(false)}>
           <div className="mobile-drawer-content" onClick={e => e.stopPropagation()}>
@@ -160,7 +172,7 @@ export default function Header({
                 <ChevronRight size={16} className="chevron" />
               </button>
 
-              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <button 
                   className="btn-primary"
                   onClick={() => {
@@ -171,6 +183,20 @@ export default function Header({
                 >
                   <UserPlus size={20} />
                   <span>Cadastrar Novo Membro</span>
+                </button>
+
+                <button 
+                  className="mobile-menu-item"
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    if (onLogout) onLogout();
+                  }}
+                  style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.3)', background: 'rgba(244, 63, 94, 0.08)' }}
+                >
+                  <div className="mobile-menu-left">
+                    <LogOut size={20} />
+                    <span>Sair da Conta</span>
+                  </div>
                 </button>
               </div>
             </div>
