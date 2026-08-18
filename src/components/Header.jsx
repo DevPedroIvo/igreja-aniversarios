@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -92,8 +93,8 @@ export default function Header({
         </div>
       </div>
 
-      {/* Drawer Lateral Mobile (Abre na direita ao apertar os 3 pontinhos) */}
-      {drawerOpen && (
+      {/* Drawer Lateral Mobile usando React Portal para document.body (Livre de travamentos e do container do header) */}
+      {drawerOpen && typeof document !== 'undefined' && createPortal(
         <div className="mobile-drawer-overlay" onClick={() => setDrawerOpen(false)}>
           <div className="mobile-drawer-content" onClick={e => e.stopPropagation()}>
             <div className="mobile-drawer-header">
@@ -174,7 +175,8 @@ export default function Header({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
