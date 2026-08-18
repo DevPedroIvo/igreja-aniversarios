@@ -26,12 +26,16 @@ export default function MemberList({ membros, onEditMembro, onDeleteMembro, onOp
       });
   }, [membros, searchTerm, sortOrder]);
 
-  // Função para formatar data (AAAA-MM-DD -> DD/MM/AAAA)
+  // Função para formatar data (AAAA-MM-DD -> DD/MM/AAAA ou DD/MM)
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    const parts = dateStr.split('-');
+    const parts = dateStr.split(/[-/]/);
     if (parts.length === 3) {
+      if (parts[0] === '2000') return `${parts[2]}/${parts[1]}`;
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    if (parts.length === 2) {
+      return `${parts[0]}/${parts[1]}`;
     }
     return dateStr;
   };

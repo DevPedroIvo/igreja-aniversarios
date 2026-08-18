@@ -89,6 +89,19 @@ export default function BirthdayList({ membros }) {
     return currentYear - year;
   };
 
+  const formatBirthdayDate = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split(/[-/]/);
+    if (parts.length === 3) {
+      if (parts[0] === '2000') return `${parts[2]}/${parts[1]}`;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    if (parts.length === 2) {
+      return `${parts[0]}/${parts[1]}`;
+    }
+    return dateStr;
+  };
+
   const selectedMonthLabel = MESES.find(m => m.value === selectedMonth)?.label;
 
   return (
@@ -197,7 +210,7 @@ export default function BirthdayList({ membros }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.875rem' }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Calendar size={13} style={{ color: 'var(--primary-gold)' }} />
-                      <span>{parts.reverse().join('/')}</span>
+                      <span>{formatBirthdayDate(membro.data_nascimento)}</span>
                     </div>
 
                     {membro.observacoes && (
